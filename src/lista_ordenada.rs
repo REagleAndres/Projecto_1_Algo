@@ -49,8 +49,9 @@ impl ListaOrdenada {
     }
 
     fn union(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
-        let mut new_vec = 
-        let new_list = ListaOrdenada::init(a_lista.vector)
+        let new_vec: Vec<i32> = [a_lista.vector.as_slice(), b_lista.vector.as_slice()].concat(); //as_slice devuelve una lista de lectura sin modificar la original
+        let new_list = ListaOrdenada::init(Some(new_vec)); //concat crea una nueva lista igual a ambas, el [a,b] nos da un arreglo temporal
+        return new_list;
     }
 
     fn intersection(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
@@ -63,5 +64,75 @@ impl ListaOrdenada {
         }
         let new_list = ListaOrdenada::init(Some(new_vector));
         return new_list;
+    }
+
+    fn difference(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
+        let mut new_vector: Vec<i32> = Vec::new();
+        for elemento in &a_lista.vector {
+            //igual que el anterior pero agregamos aquellos que no estan en b
+            if b_lista.vector.binary_search(elemento).is_err() {
+                new_vector.insert(0, *elemento);
+            }
+        }
+        for elemento in &b_lista.vector {
+            //aqui agregamos aquellos que no estan en b
+            if a_lista.vector.binary_search(elemento).is_err() {
+                new_vector.insert(0, *elemento);
+            }
+        }
+        let new_list = ListaOrdenada::init(Some(new_vector));
+        return new_list;
+    }
+}
+
+#[cfg(test)] //indica al compilador que lo que sigue es tests
+mod tests {
+    use super::*; //trae todas las funciones del modulo anterior
+    //let a_list = ListaOrdenada::init(vec![0, 1, 2, 3, 5, 8, 13]);
+
+    #[test]
+    fn init_test() {
+        let a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        let b_list = ListaOrdenada::init(None);
+
+        assert_eq!(a_list.vector, vec![0, 1, 2, 3, 5, 8, 13]);
+        assert_eq!(b_list.vector, vec![]);
+    }
+
+    #[test]
+    fn clear_test() {
+        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        a_list.clear();
+        assert_eq!(a_list.vector, vec![]);
+    }
+
+    #[test]
+    fn insert_test() {
+        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        a_list.insert(4);
+        assert_eq!(a_list.vector, vec![0, 1, 2, 3, 4, 5, 8, 13]);
+    }
+
+    #[test]
+    fn delete_test() {
+        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        a_list.delete(5);
+        assert_eq!(a_list.vector, vec![0, 1, 2, 3, 8, 13]);
+        a_list.delete(4);
+        assert_eq!(a_list.vector, vec![0, 1, 2, 3, 8, 13]);
+    }
+
+    #[test]
+    fn member_test() {
+        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        assert!(a_list.member(5));
+        assert!(!a_list.member(4));
+    }
+
+    #[test]
+    fn union_test() {
+        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        let mut b_list = ListaOrdenada::init(Some(vec![4, 6, 7, 9, 10, 11, 12]));
+        let mut c_list = ListaOrdenada::init(Some(vec![0, 1, 2, 2, 4, 8, 32]));
     }
 }
