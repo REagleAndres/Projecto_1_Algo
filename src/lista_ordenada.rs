@@ -1,5 +1,6 @@
 use std::cmp::Ordering;
-use std::collections::{ HashMap, HashSet, VecDeque };
+use std::collections::{HashMap, HashSet, VecDeque};
+use std::io::Write;
 
 use eframe::wgpu::naga::proc::index;
 
@@ -48,13 +49,19 @@ impl ListaOrdenada {
         println!("{:#?}", self.vector); // el ! en println! indica que es una macro, {} es la entrada de usuario, {:?} es modo debug y realiza print de el arreglo
     }
 
-    fn union(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
+    pub fn print_to<W: Write>(&self, mut dest: W) {
+        //esta funcion se usa solo para test
+        // writeln! funciona igual que println!, pero escribe en el destino que le digas
+        writeln!(dest, "{:#?}", self.vector).unwrap();
+    }
+
+    fn union(a_lista: &ListaOrdenada, b_lista: &ListaOrdenada) -> ListaOrdenada {
         let new_vec: Vec<i32> = [a_lista.vector.as_slice(), b_lista.vector.as_slice()].concat(); //as_slice devuelve una lista de lectura sin modificar la original
         let new_list = ListaOrdenada::init(Some(new_vec)); //concat crea una nueva lista igual a ambas, el [a,b] nos da un arreglo temporal
         return new_list;
     }
 
-    fn intersection(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
+    fn intersection(a_lista: &ListaOrdenada, b_lista: &ListaOrdenada) -> ListaOrdenada {
         let mut new_vector: Vec<i32> = Vec::new();
         for elemento in &a_lista.vector {
             // Como b_lista está ordenado, .binary_search es ultra rápido O(log n)
@@ -66,7 +73,7 @@ impl ListaOrdenada {
         return new_list;
     }
 
-    fn difference(a_lista: ListaOrdenada, b_lista: ListaOrdenada) -> ListaOrdenada {
+    fn difference(a_lista: &ListaOrdenada, b_lista: &ListaOrdenada) -> ListaOrdenada {
         let mut new_vector: Vec<i32> = Vec::new();
         for elemento in &a_lista.vector {
             //igual que el anterior pero agregamos aquellos que no estan en b
@@ -130,9 +137,58 @@ mod tests {
     }
 
     #[test]
+    fn print_test() {
+        let a_list = ListaOrdenada {
+            vector: vec![1, 2, 3],
+        };
+        // Creamos un buffer en memoria (un vector de bytes) en lugar de la consola
+        let mut buffer = Vec::new();
+        // Llamamos a la función apuntando a nuestro buffer
+        a_list.print_to(&mut buffer);
+        // Convertimos los bytes capturados a un String legible
+        let resultado = String::from_utf8(buffer).unwrap();
+        // El assert_eq! con el formato exacto de {:#?} que genera un Vec
+        let esperado = "[\n    1,\n    2,\n    3,\n]\n";
+        assert_eq!(resultado, esperado);
+    }
+
+    #[test]
     fn union_test() {
-        let mut a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
-        let mut b_list = ListaOrdenada::init(Some(vec![4, 6, 7, 9, 10, 11, 12]));
-        let mut c_list = ListaOrdenada::init(Some(vec![0, 1, 2, 2, 4, 8, 32]));
+        let a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        let b_list = ListaOrdenada::init(Some(vec![4, 6, 7, 9, 10, 11, 12]));
+
+        assert_eq!(
+            ListaOrdenada::union(&a_list, &b_list).vector,
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        );
+    }
+
+    #[test]
+    fn intersection_test() {
+        let a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        let b_list = ListaOrdenada::init(Some(vec![4, 6, 7, 9, 10, 11, 12]));
+        let c_list = ListaOrdenada::init(Some(vec![0, 1, 2, 2, 4, 8, 32]));
+
+        assert_eq!(ListaOrdenada::intersection(&a_list, &b_list).vector, vec![]);
+        assert_eq!(
+            ListaOrdenada::intersection(&a_list, &c_list).vector,
+            vec![0, 1, 2, 8]
+        );
+    }
+
+    #[test]
+    fn difference_test() {
+        let a_list = ListaOrdenada::init(Some(vec![0, 1, 2, 3, 5, 8, 13]));
+        let b_list = ListaOrdenada::init(Some(vec![4, 6, 7, 9, 10, 11, 12]));
+        let c_list = ListaOrdenada::init(Some(vec![0, 1, 2, 2, 4, 8, 32]));
+
+        assert_eq!(
+            ListaOrdenada::difference(&a_list, &b_list).vector,
+            vec![0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13]
+        );
+        assert_eq!(
+            ListaOrdenada::difference(&a_list, &c_list).vector,
+            vec![3, 4, 5, 13, 32]
+        );
     }
 }
